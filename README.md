@@ -10,6 +10,7 @@ MCP server to interact with Google products with enhanced functionality includin
 
 ## Table of Contents
 
+- [Quick Start](#🚀-quick-start)
 - [Enhanced Features](#🎯-enhanced-features)
 - [Features & Capabilities](#features--capabilities)
 - [Example Prompts](#💡-example-prompts-to-try)
@@ -23,6 +24,69 @@ MCP server to interact with Google products with enhanced functionality includin
 - [License](#license)
 - [Contributing](#contributing)
 - [Support](#support)
+
+## 🚀 Quick Start
+
+**Get Google Workspace MCP running in 5 minutes!**
+
+### Prerequisites
+- Python 3.13+ and `uv` installed
+- Google account with Gmail/Calendar access
+- Cursor IDE (recommended) or any MCP client
+
+### Step 1: Clone and Install
+```bash
+git clone https://github.com/ajramos/mcp-gsuite-enhanced.git
+cd mcp-gsuite-enhanced
+uv sync
+```
+
+### Step 2: Setup Google Cloud (One-time setup)
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a project and enable **Gmail API** + **Google Calendar API**
+3. Create **OAuth 2.0 Desktop** credentials 
+4. Download and save as **`.gauth.json`** in project directory
+
+### Step 3: Configure Accounts
+Create **`.accounts.json`**:
+```json
+{
+  "accounts": [
+    {
+      "email": "your-email@gmail.com",
+      "account_type": "personal", 
+      "extra_info": "Main personal Gmail and Calendar"
+    }
+  ]
+}
+```
+
+### Step 4: Quick Configuration Check
+```bash
+python cursor_setup.py
+```
+This shows authentication status and generates Cursor configuration.
+
+### Step 5: Authenticate
+```bash
+python auth_setup.py your-email@gmail.com
+```
+Opens browser for OAuth flow - grant permissions and you're done!
+
+### Step 6: Configure in Cursor
+1. Copy the JSON configuration from Step 4
+2. Cursor → Settings (Cmd+,) → Search "MCP" 
+3. Paste configuration and restart Cursor
+
+### Step 7: Test it! 🎉
+Try these commands in Cursor:
+- *"List my calendars"* 
+- *"Show my unread emails"*
+- *"Create a test meeting with Google Meet link"*
+
+**That's it!** You now have full Google Workspace integration with automatic Google Meet links! 
+
+---
 
 ## 🎯 Enhanced Features
 
