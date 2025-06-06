@@ -1,9 +1,40 @@
-# mcp-gsuite MCP server
+# mcp-gsuite-enhanced
 
-[![smithery badge](https://smithery.ai/badge/mcp-gsuite)](https://smithery.ai/server/mcp-gsuite)
-MCP server to interact with Google products.
+**Enhanced MCP server for Google Workspace with Google Meet integration and bug fixes**
 
-## Example prompts
+[![Enhanced Version](https://img.shields.io/badge/Enhanced-Version-brightgreen)](#) 
+[![Original Project](https://img.shields.io/badge/Based%20on-mcp--gsuite-blue)](https://github.com/MarkusPfundstein/mcp-gsuite)
+[![License](https://img.shields.io/badge/License-MIT-green)](#license)
+
+MCP server to interact with Google products with enhanced functionality including working Google Meet integration and calendar event updates.
+
+## Table of Contents
+
+- [Enhanced Features](#🎯-enhanced-features)
+- [Features & Capabilities](#features--capabilities)
+- [Example Prompts](#💡-example-prompts-to-try)
+- [Installation](#install)
+- [Google Authentication Setup](#setup-google-authentication)
+- [Configuration Examples](#configuration-examples)
+- [Google Meet Integration](#enhanced-google-meet-integration)
+- [Development](#development)
+- [Security](#security)
+- [Credits](#credits)
+- [License](#license)
+- [Contributing](#contributing)
+- [Support](#support)
+
+## 🎯 Enhanced Features
+
+This enhanced version includes:
+- ✅ **Working Google Meet integration** - Automatic Meet links in calendar events
+- ✅ **Fixed `update_calendar_event`** - Previously broken, now fully functional
+- ✅ **Improved attendee processing** - Fixed email parsing bugs
+- ✅ **Updated dependencies** - Latest Google APIs and MCP version
+- ✅ **Better error handling** - More robust calendar operations
+- ✅ **Setup utilities** - `auth_setup.py` and `cursor_setup.py` for easy configuration
+
+## Features & Capabilities
 
 Right now, this MCP server supports Gmail and Calendar integration with the following capabilities:
 
@@ -17,239 +48,334 @@ Right now, this MCP server supports Gmail and Calendar integration with the foll
 * Create new draft emails with recipients, subject, body and CC options
 * Delete draft emails
 * Reply to existing emails (can either send immediately or save as draft)
-* Retrieve multiple emails at once by their IDs.
-* Save multiple attachments from emails to your local system.
+* Retrieve multiple emails at once by their IDs
+* Download and save email attachments to local files
+* Bulk save multiple attachments from different emails
 
 3. Calendar
-* Manage multiple calendars
-* Get calendar events within specified time ranges
-* Create calendar events with:
-  + Title, start/end times
-  + Optional location and description
-  + Optional attendees
-  + Custom timezone support
-  + Notification preferences
+* List available calendars for your account
+* Get calendar events within a specified time range
+* Create new calendar events with attendees and **automatic Google Meet links** 🎪
+* **Update existing calendar events** (summary, time, attendees) ⚡
 * Delete calendar events
+* Full timezone support for international scheduling
 
-Example prompts you can try:
+## 💡 Example Prompts to Try
 
-* Retrieve my latest unread messages
-* Search my emails from the Scrum Master
-* Retrieve all emails from accounting
-* Take the email about ABC and summarize it
-* Write a nice response to Alice's last email and upload a draft.
-* Reply to Bob's email with a Thank you note. Store it as draft
+### 📧 Gmail Operations
+- **Email Search & Retrieval**
+  - *"Retrieve my latest unread messages"*
+  - *"Search my emails from the Scrum Master"*
+  - *"Retrieve all emails from accounting"*
+  - *"Take the email about ABC and summarize it"*
 
-* What do I have on my agenda tomorrow?
-* Check my private account's Family agenda for next week
-* I need to plan an event with Tim for 2hrs next week. Suggest some time slots.
+- **Email Composition & Replies**  
+  - *"Write a nice response to Alice's last email and upload a draft"*
+  - *"Reply to Bob's email with a Thank you note. Store it as draft"*
 
-## Quickstart
+- **Attachment Management**
+  - *"Download all attachments from emails with subject containing 'invoice'"*
+  - *"Save attachments from all emails from john@company.com this week"*
 
-### Install
+### 📅 Calendar Management
+- **Agenda & Scheduling**
+  - *"What do I have on my agenda tomorrow?"*
+  - *"Check my private account's Family agenda for next week"*
+  - *"I need to plan an event with Tim for 2hrs next week. Suggest some time slots"*
 
-### Installing via Smithery
+- **Event Creation with Google Meet** 🎪
+  - *"Create a meeting with John next Friday and include a Google Meet link"*
+  - *"Schedule a client call for Thursday 2 PM and invite john@company.com"*
+  - *"Create a team standup for every Monday at 9 AM with Google Meet"*
+  - *"Create a project review meeting for tomorrow at 3 PM with Google Meet link and invite the whole team"*
 
-To install mcp-gsuite for Claude Desktop automatically via [Smithery](https://smithery.ai/server/mcp-gsuite):
+- **Event Updates** ⚡ *(Enhanced Feature)*
+  - *"Update my 3pm meeting to include Sarah as an attendee"*
+  - *"Update the quarterly planning meeting to change the time to 4 PM and add sarah@company.com"*
+  - *"Change tomorrow's team meeting location to Conference Room B"*
+
+- **Advanced Calendar Queries**
+  - *"List all my calendar events for next week that have Google Meet links"*
+  - *"Show me all recurring meetings I have this month"*
+  - *"Find all meetings with external attendees scheduled for next week"*
+
+## Install
+
+### Option 1: Enhanced Version (Recommended) 🚀
+
+This enhanced version includes all the Google Meet fixes and improvements.
+
+#### Cursor IDE Setup (Recommended)
+
+For Cursor IDE users, use the setup helper script:
+
+```bash
+python cursor_setup.py
+```
+
+This will generate the correct MCP configuration and provide step-by-step instructions for adding it to your Cursor settings.
+
+#### Manual Installation
+
+You can install this enhanced version using uv (recommended):
+
+```bash
+# Clone and install from source (until published)
+git clone https://github.com/ajramos/mcp-gsuite-enhanced
+cd mcp-gsuite-enhanced
+uv sync
+```
+
+Or with pip:
+
+```bash
+# Clone and install from source (until published)
+git clone https://github.com/ajramos/mcp-gsuite-enhanced
+cd mcp-gsuite-enhanced
+pip install -e .
+```
+
+### Option 2: Original Version via Smithery 📦
+
+If you prefer the original version (without the Google Meet enhancements), you can install it via Smithery:
 
 ```bash
 npx -y @smithery/cli install mcp-gsuite --client claude
 ```
 
-#### Oauth 2
+**Note:** The original version has some limitations:
+- ❌ Google Meet integration may not work reliably
+- ❌ `update_calendar_event` functionality has known issues
+- ❌ Attendee processing bugs
 
-Google Workspace (G Suite) APIs require OAuth2 authorization. Follow these steps to set up authentication:
+## Setup Google Authentication
 
-1. Create OAuth2 Credentials:
-   - Go to the [Google Cloud Console](https://console.cloud.google.com/)
-   - Create a new project or select an existing one
-   - Enable the Gmail API and Google Calendar API for your project
-   - Go to "Credentials" → "Create Credentials" → "OAuth client ID"
-   - Select "Desktop app" or "Web application" as the application type
-   - Configure the OAuth consent screen with required information
-   - Add authorized redirect URIs (include `http://localhost:4100/code` for local development)
+### Google Cloud Configuration
 
-2. Required OAuth2 Scopes:
-   
+You'll need to create a Google Cloud project and configure OAuth2 credentials:
 
-```json
-   [
-     "openid",
-     "https://mail.google.com/",
-     "https://www.googleapis.com/auth/calendar",
-     "https://www.googleapis.com/auth/userinfo.email"
-   ]
-```
+#### Step 1: Create Google Cloud Project
 
-3. Then create a `.gauth.json` in your working directory with client
+1. Go to the [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select an existing one
+3. Enable the required APIs:
+   - Go to "APIs & Services" → "Library"
+   - Search for **"Gmail API"** and enable it
+   - Search for **"Google Calendar API"** and enable it
+
+#### Step 2: Setup OAuth 2.0 Credentials
+
+1. Go to "APIs & Services" → "Credentials"
+2. Click "Create Credentials" → "OAuth client ID"
+3. Select **"Desktop application"** as the application type
+4. Configure the OAuth consent screen if prompted
+5. Download the credentials JSON file and save it as **`.gauth.json`** in your project directory
+
+#### Step 3: Configure Your Google Accounts
+
+Create a `.accounts.json` file in your project directory to specify which Google accounts to use:
 
 ```json
 {
-    "web": {
-        "client_id": "$your_client_id",
-        "client_secret": "$your_client_secret",
-        "redirect_uris": ["http://localhost:4100/code"],
-        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-        "token_uri": "https://oauth2.googleapis.com/token"
+  "accounts": [
+    {
+      "email": "your-work@company.com",
+      "account_type": "work",
+      "extra_info": "Work account with company calendar"
+    },
+    {
+      "email": "your-personal@gmail.com", 
+      "account_type": "personal",
+      "extra_info": "Personal account with family calendar"
     }
+  ]
 }
 ```
 
-4. Create a `.accounts.json` file with account information
+**Fields explanation:**
+- **`email`**: Your Google account email address
+- **`account_type`**: Category like "work", "personal", etc. (helps with organization)
+- **`extra_info`**: Additional context that helps the AI understand this account's purpose
+
+#### Step 4: Authenticate Your Google Accounts
+
+Once you have both `.gauth.json` and `.accounts.json` files, run the authentication setup for each account:
+
+```bash
+python auth_setup.py your-work@company.com
+python auth_setup.py your-personal@gmail.com
+```
+
+This script will automatically handle the OAuth flow and store your credentials securely in `.oauth2.{email}.json` files.
+
+> **⚠️ SECURITY WARNING**: Never commit credential files (`.gauth.json`, `.accounts.json`, `.oauth2.*.json`) to version control! Add them to your `.gitignore` file to prevent accidental exposure of sensitive authentication data.
+
+### OAuth 2.0 Scopes (Automatic)
+
+The server automatically requests these permissions - **no manual configuration needed**:
 
 ```json
-{
-    "accounts": [
-        {
-            "email": "alice@bob.com",
-            "account_type": "personal",
-            "extra_info": "Additional info that you want to tell Claude: E.g. 'Contains Family Calendar'"
-        }
-    ]
-}
+[
+  "openid",
+  "https://www.googleapis.com/auth/userinfo.email",
+  "https://mail.google.com/",
+  "https://www.googleapis.com/auth/calendar"
+]
 ```
 
-You can specifiy multiple accounts. Make sure they have access in your Google Auth app. The `extra_info` field is especially interesting as you can add info here that you want to tell the AI about the account (e.g. whether it has a specific agenda)
+These scopes allow the server to:
+- ✅ Access your Gmail (read, send, manage drafts)
+- ✅ Manage your Google Calendar (create, update, delete events)
+- ✅ Create Google Meet links automatically
+- ✅ Identify your Google account
 
-Note: When you first execute one of the tools for a specific account, a browser will open, redirect you to Google and ask for your credentials, scope, etc. After a successful login, it stores the credentials in a local file called `.oauth.{email}.json` . Once you are authorized, the refresh token will be used.
+### Configuration Examples
 
-#### Claude Desktop
+#### Claude Desktop (Enhanced Version)
 
-On MacOS: `~/Library/Application\ Support/Claude/claude_desktop_config.json`
-
-On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
-
-<details>
-  <summary>Development/Unpublished Servers Configuration</summary>
-  
+Add this to your Claude Desktop configuration:
 
 ```json
 {
   "mcpServers": {
-    "mcp-gsuite": {
+    "mcp-gsuite-enhanced": {
       "command": "uv",
       "args": [
-        "--directory",
-        "<dir_to>/mcp-gsuite",
+        "--directory", 
+        "/path/to/mcp-gsuite-enhanced",
         "run",
-        "mcp-gsuite"
+        "mcp-gsuite-enhanced"
       ]
     }
   }
 }
 ```
 
+#### Claude Desktop (Original Version)
 
-Note: You can also use the `uv run mcp-gsuite --accounts-file /path/to/custom/.accounts.json` to specify a different accounts file or `--credentials-dir /path/to/custom/credentials` to specify a different credentials directory.
-
-```json
-{
-  "mcpServers": {
-    "mcp-gsuite": {
-      "command": "uv",
-      "args": [
-        "--directory",
-        "<dir_to>/mcp-gsuite",
-        "run",
-        "mcp-gsuite",
-        "--accounts-file",
-        "/path/to/custom/.accounts.json",
-        "--credentials-dir",
-        "/path/to/custom/credentials"
-      ]
-    }
-  }
-}
-```
-
-</details>
-
-<details>
-  <summary>Published Servers Configuration</summary>
-  
+If you installed via Smithery, your configuration is automatically handled. Alternatively:
 
 ```json
 {
   "mcpServers": {
     "mcp-gsuite": {
       "command": "uvx",
+      "args": ["mcp-gsuite"]
+    }
+  }
+}
+```
+
+#### Using with uvx (Enhanced Version)
+
+```json
+{
+  "mcpServers": {
+    "mcp-gsuite-enhanced": {
+      "command": "uv",
       "args": [
-        "mcp-gsuite",
-        "--accounts-file",
-        "/path/to/custom/.accounts.json",
-        "--credentials-dir",
-        "/path/to/custom/credentials"
+        "--directory",
+        "/path/to/mcp-gsuite-enhanced",
+        "run",
+        "mcp-gsuite-enhanced"
       ]
     }
   }
 }
 ```
 
-</details>
 
-### Configuration Options
 
-The MCP server can be configured with several command-line options to specify custom paths for authentication and account information:
+## Enhanced Google Meet Integration
 
-* `--gauth-file`: Specifies the path to the `.gauth.json` file containing OAuth2 client configuration. Default is `./.gauth.json`.
-* `--accounts-file`: Specifies the path to the `.accounts.json` file containing information about the Google accounts. Default is `./.accounts.json`.
-* `--credentials-dir`: Specifies the directory where OAuth credentials are stored after successful authentication. Default is the current working directory with a subdirectory for each account as `.oauth.{email}.json`.
+The enhanced version automatically creates Google Meet links for new calendar events:
 
-These options allow for flexibility in managing different environments or multiple sets of credentials and accounts, especially useful in development and testing scenarios.
-
-Example usage:
-
-```bash
-uv run mcp-gsuite --gauth-file /path/to/custom/.gauth.json --accounts-file /path/to/custom/.accounts.json --credentials-dir /path/to/custom/credentials
+```json
+{
+  "calendar_id": "primary",
+  "summary": "Team Standup",
+  "start_time": "2024-01-15T10:00:00Z",
+  "end_time": "2024-01-15T10:30:00Z",
+  "attendees": "team@company.com,lead@company.com",
+  "create_meet_link": true
+}
 ```
 
-This configuration is particularly useful when you have multiple instances of the server running with different configurations or when deploying to environments where the default paths are not suitable.
+Results in a calendar event with:
+- ✅ Automatic Google Meet link
+- ✅ Phone dial-in numbers
+- ✅ Meeting PIN
+- ✅ All attendees invited
 
 ## Development
 
-### Building and Publishing
-
-To prepare the package for distribution:
-
-1. Sync dependencies and update lockfile:
+To set up for development:
 
 ```bash
+git clone https://github.com/ajramos/mcp-gsuite-enhanced
+cd mcp-gsuite-enhanced
 uv sync
+uv run mcp-gsuite-enhanced
 ```
 
-2. Build package distributions:
+### Debugging with MCP Inspector
+
+Since MCP servers run over stdio, debugging can be challenging. For the best debugging experience, we strongly recommend using the [MCP Inspector](https://github.com/modelcontextprotocol/inspector).
+
+You can launch the MCP Inspector via [`npm`](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) with this command:
 
 ```bash
-uv build
-```
-
-This will create source and wheel distributions in the `dist/` directory.
-
-3. Publish to PyPI:
-
-```bash
-uv publish
-```
-
-Note: You'll need to set PyPI credentials via environment variables or command flags:
-* Token: `--token` or `UV_PUBLISH_TOKEN`
-* Or username/password: `--username`/`UV_PUBLISH_USERNAME` and `--password`/`UV_PUBLISH_PASSWORD`
-
-### Debugging
-
-Since MCP servers run over stdio, debugging can be challenging. For the best debugging
-experience, we strongly recommend using the [MCP Inspector](https://github.com/modelcontextprotocol/inspector).
-
-You can launch the MCP Inspector via [ `npm` ](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) with this command:
-
-```bash
-npx @modelcontextprotocol/inspector uv --directory /path/to/mcp-gsuite run mcp-gsuite
+npx @modelcontextprotocol/inspector uv --directory /path/to/mcp-gsuite-enhanced run mcp-gsuite-enhanced
 ```
 
 Upon launching, the Inspector will display a URL that you can access in your browser to begin debugging.
 
+#### Server Logs
+
 You can also watch the server logs with this command:
 
 ```bash
-tail -n 20 -f ~/Library/Logs/Claude/mcp-server-mcp-gsuite.log
+# macOS
+tail -n 20 -f ~/Library/Logs/Claude/mcp-server-mcp-gsuite-enhanced.log
+
+# Linux 
+tail -n 20 -f ~/.config/Claude/logs/mcp-server-mcp-gsuite-enhanced.log
+
+# Windows
+Get-Content "$env:APPDATA\Claude\logs\mcp-server-mcp-gsuite-enhanced.log" -Wait -Tail 20
 ```
+
+## Security
+
+- All authentication is handled locally using OAuth 2.0
+- Credentials are stored securely in local files
+- No data is sent to third parties except Google's APIs
+- Supports multiple Google accounts with isolated credentials
+
+## Credits
+
+Based on [mcp-gsuite](https://github.com/MarkusPfundstein/mcp-gsuite) by Markus Pfundstein.
+
+Enhanced with Google Meet integration, bug fixes, and improved functionality by Angel Ramos.
+
+## License
+
+MIT License - see LICENSE file for details.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## Support
+
+If you encounter any issues with the enhanced features:
+
+1. **Check the logs** using the debugging instructions above
+2. **Verify authentication** by running `python auth_setup.py <your-email>`
+3. **Open an issue** with:
+   - Your operating system
+   - Python version
+   - Error messages or logs
+   - Steps to reproduce the issue
+
+For general MCP questions, see the [Model Context Protocol documentation](https://modelcontextprotocol.io/).

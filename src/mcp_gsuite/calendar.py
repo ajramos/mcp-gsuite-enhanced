@@ -114,7 +114,7 @@ class CalendarService():
                 location: str | None = None, description: str | None = None, 
                 attendees: list | None = None, send_notifications: bool = True,
                 timezone: str | None = None,
-                calendar_id : str = 'primary') -> dict | None:
+                calendar_id : str = 'primary', create_meet_link: bool = True) -> dict | None:
         """
         Create a new calendar event.
         
@@ -127,6 +127,7 @@ class CalendarService():
             attendees (list, optional): List of attendee email addresses
             send_notifications (bool): Whether to send notifications to attendees
             timezone (str, optional): Timezone for the event (e.g. 'America/New_York')
+            create_meet_link (bool): Whether to create a Google Meet link for the event
             
         Returns:
             dict: Created event data or None if creation fails
@@ -152,18 +153,111 @@ class CalendarService():
                 event['description'] = description
             if attendees:
                 event['attendees'] = [{'email': email} for email in attendees]
+            
+            # Add Google Meet conference data if requested
+            if create_meet_link:
+                import uuid
+                request_id = str(uuid.uuid4())[:16]  # Use first 16 chars of UUID for uniqueness
+                event['conferenceData'] = {
+                    'createRequest': {
+                        'requestId': request_id,
+                        'conferenceSolutionKey': {
+                            'type': 'hangoutsMeet'
+                        }
+                    }
+                }
                 
             # Create the event
             created_event = self.service.events().insert(
                 calendarId=calendar_id,
                 body=event,
-                sendNotifications=send_notifications
+                sendNotifications=send_notifications,
+                conferenceDataVersion=1 if create_meet_link else 0
             ).execute()
             
             return created_event
             
         except Exception as e:
             logging.error(f"Error creating calendar event: {str(e)}")
+            logging.error(traceback.format_exc())
+            return None
+        
+    def update_event(self, event_id: str, summary: str = None, start_time: str = None, end_time: str = None, 
+                location: str = None, description: str = None, 
+                attendees: list = None, send_notifications: bool = True,
+                timezone: str = None, calendar_id: str = 'primary', 
+                create_meet_link: bool = False) -> dict | None:
+        """
+        Update an existing calendar event.
+        
+        Args:
+            event_id (str): ID of the event to update
+            summary (str, optional): Title of the event
+            start_time (str, optional): Start time in RFC3339 format
+            end_time (str, optional): End time in RFC3339 format
+            location (str, optional): Location of the event
+            description (str, optional): Description of the event
+            attendees (list, optional): List of attendee email addresses
+            send_notifications (bool): Whether to send notifications to attendees
+            timezone (str, optional): Timezone for the event (e.g. 'America/New_York')
+            create_meet_link (bool): Whether to create a Google Meet link for the event
+            
+        Returns:
+            dict: Updated event data or None if update fails
+        """
+        try:
+            # First, get the current event
+            current_event = self.service.events().get(
+                calendarId=calendar_id,
+                eventId=event_id
+            ).execute()
+            
+            # Update only the specified fields
+            if summary is not None:
+                current_event['summary'] = summary
+            if start_time is not None:
+                current_event['start'] = {
+                    'dateTime': start_time,
+                    'timeZone': timezone or current_event['start'].get('timeZone', 'UTC'),
+                }
+            if end_time is not None:
+                current_event['end'] = {
+                    'dateTime': end_time,
+                    'timeZone': timezone or current_event['end'].get('timeZone', 'UTC'),
+                }
+            if location is not None:
+                current_event['location'] = location
+            if description is not None:
+                current_event['description'] = description
+            if attendees is not None:
+                current_event['attendees'] = [{'email': email} for email in attendees]
+            
+            # Add Google Meet conference data if requested
+            if create_meet_link and 'conferenceData' not in current_event:
+                import uuid
+                request_id = str(uuid.uuid4())[:16]  # Use first 16 chars of UUID for uniqueness
+                current_event['conferenceData'] = {
+                    'createRequest': {
+                        'requestId': request_id,
+                        'conferenceSolutionKey': {
+                            'type': 'hangoutsMeet'
+                        }
+                    }
+                }
+                
+            # Update the event
+            updated_event = self.service.events().update(
+                calendarId=calendar_id,
+                eventId=event_id,
+                body=current_event,
+                sendNotifications=send_notifications,
+                conferenceDataVersion=1 if create_meet_link else 0
+            ).execute()
+            
+            return updated_event
+            
+        except Exception as e:
+            logging.error(f"Error updating calendar event {event_id}: {str(e)}")
             logging.error(traceback.format_exc())
             return None
         

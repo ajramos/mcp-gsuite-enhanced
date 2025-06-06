@@ -1,173 +1,504 @@
-
 import logging
-from collections.abc import Sequence
-from functools import lru_cache
-import subprocess
+import sys
+import asyncio
+import json
 from typing import Any
 import traceback
-from dotenv import load_dotenv
-from mcp.server import Server
-import threading
-import sys
-from mcp.types import (
-    Tool,
-    TextContent,
-    ImageContent,
-    EmbeddedResource,
-)
-import json
+
+from mcp.server.models import InitializationOptions
+import mcp.types as types
+from mcp.server import NotificationOptions, Server
+import mcp.server.stdio
+
 from . import gauth
-from http.server import BaseHTTPRequestHandler,HTTPServer
-from urllib.parse import (
-    urlparse,
-    parse_qs,
-)
-
-class OauthListener(BaseHTTPRequestHandler):
-    def do_GET(self):
-        url = urlparse(self.path)
-        if url.path != "/code":
-            self.send_response(404)
-            self.end_headers()
-            return
-
-        query = parse_qs(url.query)
-        if "code" not in query:
-            self.send_response(400)
-            self.end_headers()
-            return
-        
-        self.send_response(200)
-        self.end_headers()
-        self.wfile.write("Auth successful! You can close the tab!".encode("utf-8"))
-        self.wfile.flush()
-
-        storage = {}
-        creds = gauth.get_credentials(authorization_code=query["code"][0], state=storage)
-
-        t = threading.Thread(target = self.server.shutdown)
-        t.daemon = True
-        t.start()
-
-        
-
-load_dotenv()
-
 from . import tools_gmail
 from . import tools_calendar
-from . import toolhandler
-
-
-# Load environment variables
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("mcp-gsuite")
-
-def start_auth_flow(user_id: str):
-    auth_url = gauth.get_authorization_url(user_id, state={})
-    if sys.platform == "darwin" or sys.platform.startswith("linux"):
-        subprocess.Popen(['open', auth_url])
-    else:
-        import webbrowser
-        webbrowser.open(auth_url)
-
-    # start server for code callback
-    server_address = ('', 4100)
-    server = HTTPServer(server_address, OauthListener)
-    server.serve_forever()
-
-
-def setup_oauth2(user_id: str):
-    accounts = gauth.get_account_info()
-    if len(accounts) == 0:
-        raise RuntimeError("No accounts specified in .gauth.json")
-    if user_id not in [a.email for a in accounts]:
-        raise RuntimeError(f"Account for email: {user_id} not specified in .gauth.json")
-
-    credentials = gauth.get_stored_credentials(user_id=user_id)
-    if not credentials:
-        start_auth_flow(user_id=user_id)
-    else:
-        if credentials.access_token_expired:
-            logger.error("credentials expired. try refresh")
-
-        # this call refreshes access token
-        user_info = gauth.get_user_info(credentials=credentials)
-        #logging.error(f"User info: {json.dumps(user_info)}")
-        gauth.store_credentials(credentials=credentials, user_id=user_id)
-
-
-app = Server("mcp-gsuite")
-
-tool_handlers = {}
-def add_tool_handler(tool_class: toolhandler.ToolHandler):
-    global tool_handlers
-
-    tool_handlers[tool_class.name] = tool_class
-
-def get_tool_handler(name: str) -> toolhandler.ToolHandler | None:
-    if name not in tool_handlers:
-        return None
-    
-    return tool_handlers[name]
-
-add_tool_handler(tools_gmail.QueryEmailsToolHandler())
-add_tool_handler(tools_gmail.GetEmailByIdToolHandler())
-add_tool_handler(tools_gmail.CreateDraftToolHandler())
-add_tool_handler(tools_gmail.DeleteDraftToolHandler())
-add_tool_handler(tools_gmail.ReplyEmailToolHandler())
-add_tool_handler(tools_gmail.GetAttachmentToolHandler())
-add_tool_handler(tools_gmail.BulkGetEmailsByIdsToolHandler())
-add_tool_handler(tools_gmail.BulkSaveAttachmentsToolHandler())
-
-add_tool_handler(tools_calendar.ListCalendarsToolHandler())
-add_tool_handler(tools_calendar.GetCalendarEventsToolHandler())
-add_tool_handler(tools_calendar.CreateCalendarEventToolHandler())
-add_tool_handler(tools_calendar.DeleteCalendarEventToolHandler())
-
-@app.list_tools()
-async def list_tools() -> list[Tool]:
-    """List available tools."""
-
-    return [th.get_tool_description() for th in tool_handlers.values()]
-
-
-@app.call_tool()
-async def call_tool(name: str, arguments: Any) -> Sequence[TextContent | ImageContent | EmbeddedResource]:
-    try:        
-        if not isinstance(arguments, dict):
-            raise RuntimeError("arguments must be dictionary")
-        
-        if toolhandler.USER_ID_ARG not in arguments:
-            raise RuntimeError("user_id argument is missing in dictionary.")
-
-        setup_oauth2(user_id=arguments.get(toolhandler.USER_ID_ARG, ""))
-
-        tool_handler = get_tool_handler(name)
-        if not tool_handler:
-            raise ValueError(f"Unknown tool: {name}")
-
-        return tool_handler.run_tool(arguments)
-    except Exception as e:
-        logging.error(traceback.format_exc())
-        logging.error(f"Error during call_tool: str(e)")
-        raise RuntimeError(f"Caught Exception. Error: {str(e)}")
-
+logger = logging.getLogger(__name__)
 
 async def main():
-    print(sys.platform)
+    # Initialize the server
+    server = Server("mcp-gsuite")
+    
+    # Log platform and account info
+    logger.info(sys.platform)
     accounts = gauth.get_account_info()
     for account in accounts:
         creds = gauth.get_stored_credentials(user_id=account.email)
         if creds:
-            logging.info(f"found credentials for {account.email}")
+            logger.info(f"found credentials for {account.email}")
+    logger.info(f"Available accounts: {', '.join([a.email for a in accounts])}")
 
-    from mcp.server.stdio import stdio_server
+    @server.list_tools()
+    async def handle_list_tools() -> list[types.Tool]:
+        """List available tools."""
+        logger.info("Listing tools")
+        
+        tools = [
+            # Calendar tools
+            types.Tool(
+                name="list_calendars",
+                description="List all calendars for the authenticated user",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "__user_id__": {
+                            "type": "string",
+                            "description": f"The EMAIL of the Google account. Available accounts: {', '.join([a.email for a in accounts])}"
+                        }
+                    },
+                    "required": ["__user_id__"]
+                }
+            ),
+            types.Tool(
+                name="get_calendar_events",
+                description="Get events from a specific calendar",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "__user_id__": {
+                            "type": "string",
+                            "description": f"The EMAIL of the Google account. Available accounts: {', '.join([a.email for a in accounts])}"
+                        },
+                        "calendar_id": {
+                            "type": "string",
+                            "description": "Calendar ID to get events from"
+                        },
+                        "time_min": {
+                            "type": "string",
+                            "description": "Start time for events (ISO format)"
+                        },
+                        "time_max": {
+                            "type": "string",
+                            "description": "End time for events (ISO format)"
+                        }
+                    },
+                    "required": ["__user_id__", "calendar_id"]
+                }
+            ),
+            types.Tool(
+                name="create_calendar_event",
+                description="Create a new calendar event with attendees and Google Meet link",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "__user_id__": {
+                            "type": "string",
+                            "description": f"The EMAIL of the Google account. Available accounts: {', '.join([a.email for a in accounts])}"
+                        },
+                        "calendar_id": {
+                            "type": "string",
+                            "description": "Calendar ID to create event in"
+                        },
+                        "summary": {
+                            "type": "string",
+                            "description": "Event title/summary"
+                        },
+                        "start_time": {
+                            "type": "string",
+                            "description": "Start time (ISO format)"
+                        },
+                        "end_time": {
+                            "type": "string",
+                            "description": "End time (ISO format)"
+                        },
+                        "location": {
+                            "type": "string",
+                            "description": "Location of the event (optional)"
+                        },
+                        "description": {
+                            "type": "string",
+                            "description": "Description or notes for the event (optional)"
+                        },
+                                                 "attendees": {
+                             "type": "string",
+                             "description": "Comma-separated list of attendee emails (optional)"
+                         },
+                        "send_notifications": {
+                            "type": "boolean",
+                            "description": "Whether to send notifications to attendees",
+                            "default": True
+                        },
+                        "timezone": {
+                            "type": "string",
+                            "description": "Timezone for the event (e.g. 'America/New_York'). Defaults to UTC if not specified."
+                        },
+                        "create_meet_link": {
+                            "type": "boolean",
+                            "description": "Whether to create a Google Meet link for the event",
+                            "default": True
+                        }
+                    },
+                    "required": ["__user_id__", "calendar_id", "summary", "start_time", "end_time"]
+                }
+                         ),
+             types.Tool(
+                 name="delete_calendar_event",
+                 description="Delete a calendar event",
+                 inputSchema={
+                     "type": "object",
+                     "properties": {
+                         "__user_id__": {
+                             "type": "string",
+                             "description": f"The EMAIL of the Google account. Available accounts: {', '.join([a.email for a in accounts])}"
+                         },
+                         "calendar_id": {
+                             "type": "string",
+                             "description": "Calendar ID containing the event"
+                         },
+                         "event_id": {
+                             "type": "string",
+                             "description": "Event ID to delete"
+                         }
+                     },
+                     "required": ["__user_id__", "calendar_id", "event_id"]
+                 }
+             ),
+             types.Tool(
+                 name="update_calendar_event",
+                 description="Update an existing calendar event",
+                 inputSchema={
+                     "type": "object",
+                     "properties": {
+                         "__user_id__": {
+                             "type": "string",
+                             "description": f"The EMAIL of the Google account. Available accounts: {', '.join([a.email for a in accounts])}"
+                         },
+                         "calendar_id": {
+                             "type": "string",
+                             "description": "Calendar ID containing the event"
+                         },
+                         "event_id": {
+                             "type": "string",
+                             "description": "Event ID to update"
+                         },
+                         "summary": {
+                             "type": "string",
+                             "description": "Event title/summary (optional)"
+                         },
+                         "start_time": {
+                             "type": "string",
+                             "description": "Start time (ISO format) (optional)"
+                         },
+                         "end_time": {
+                             "type": "string",
+                             "description": "End time (ISO format) (optional)"
+                         },
+                         "create_meet_link": {
+                             "type": "boolean",
+                             "description": "Whether to create a Google Meet link (only if not already present)",
+                             "default": False
+                         },
+                         "attendees": {
+                             "type": "string",
+                             "description": "Comma-separated list of attendee emails (optional)"
+                         }
+                     },
+                     "required": ["__user_id__", "calendar_id", "event_id"]
+                 }
+             ),
+             # Gmail tools
+             types.Tool(
+                name="query_emails",
+                description="Search and query emails",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "__user_id__": {
+                            "type": "string",
+                            "description": f"The EMAIL of the Google account. Available accounts: {', '.join([a.email for a in accounts])}"
+                        },
+                        "query": {
+                            "type": "string",
+                            "description": "Gmail search query"
+                        }
+                    },
+                    "required": ["__user_id__"]
+                }
+            ),
+            types.Tool(
+                name="get_email_by_id",
+                description="Get email content by ID",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "__user_id__": {
+                            "type": "string",
+                            "description": f"The EMAIL of the Google account. Available accounts: {', '.join([a.email for a in accounts])}"
+                        },
+                        "email_id": {
+                            "type": "string",
+                            "description": "Email ID to retrieve"
+                        }
+                                         },
+                     "required": ["__user_id__", "email_id"]
+                 }
+             ),
+             types.Tool(
+                 name="create_draft",
+                 description="Create a draft email",
+                 inputSchema={
+                     "type": "object",
+                     "properties": {
+                         "__user_id__": {
+                             "type": "string",
+                             "description": f"The EMAIL of the Google account. Available accounts: {', '.join([a.email for a in accounts])}"
+                         },
+                         "to": {
+                             "type": "string",
+                             "description": "Recipient email address"
+                         },
+                         "subject": {
+                             "type": "string",
+                             "description": "Email subject"
+                         },
+                         "body": {
+                             "type": "string",
+                             "description": "Email body content"
+                         }
+                     },
+                     "required": ["__user_id__", "to", "subject", "body"]
+                 }
+             ),
+             types.Tool(
+                 name="delete_draft",
+                 description="Delete a draft email",
+                 inputSchema={
+                     "type": "object",
+                     "properties": {
+                         "__user_id__": {
+                             "type": "string",
+                             "description": f"The EMAIL of the Google account. Available accounts: {', '.join([a.email for a in accounts])}"
+                         },
+                         "draft_id": {
+                             "type": "string",
+                             "description": "Draft ID to delete"
+                         }
+                     },
+                     "required": ["__user_id__", "draft_id"]
+                 }
+             ),
+             types.Tool(
+                 name="reply_email",
+                 description="Reply to an email",
+                 inputSchema={
+                     "type": "object",
+                     "properties": {
+                         "__user_id__": {
+                             "type": "string",
+                             "description": f"The EMAIL of the Google account. Available accounts: {', '.join([a.email for a in accounts])}"
+                         },
+                         "thread_id": {
+                             "type": "string",
+                             "description": "Thread ID to reply to"
+                         },
+                         "body": {
+                             "type": "string",
+                             "description": "Reply body content"
+                         },
+                         "send_directly": {
+                             "type": "boolean",
+                             "description": "Whether to send directly or save as draft"
+                         }
+                     },
+                     "required": ["__user_id__", "thread_id", "body"]
+                 }
+             ),
+             types.Tool(
+                 name="get_attachment",
+                 description="Download an email attachment",
+                 inputSchema={
+                     "type": "object",
+                     "properties": {
+                         "__user_id__": {
+                             "type": "string",
+                             "description": f"The EMAIL of the Google account. Available accounts: {', '.join([a.email for a in accounts])}"
+                         },
+                         "message_id": {
+                             "type": "string",
+                             "description": "Message ID containing the attachment"
+                         },
+                         "attachment_id": {
+                             "type": "string",
+                             "description": "Attachment ID to download"
+                         }
+                     },
+                     "required": ["__user_id__", "message_id", "attachment_id"]
+                 }
+             ),
+             types.Tool(
+                 name="bulk_get_emails",
+                 description="Get multiple emails by their IDs",
+                 inputSchema={
+                     "type": "object",
+                     "properties": {
+                         "__user_id__": {
+                             "type": "string",
+                             "description": f"The EMAIL of the Google account. Available accounts: {', '.join([a.email for a in accounts])}"
+                         },
+                         "message_ids": {
+                             "type": "array",
+                             "items": {"type": "string"},
+                             "description": "List of message IDs to retrieve"
+                         }
+                     },
+                     "required": ["__user_id__", "message_ids"]
+                 }
+             ),
+             types.Tool(
+                 name="bulk_save_attachments",
+                 description="Save multiple attachments from emails",
+                 inputSchema={
+                     "type": "object",
+                     "properties": {
+                         "__user_id__": {
+                             "type": "string",
+                             "description": f"The EMAIL of the Google account. Available accounts: {', '.join([a.email for a in accounts])}"
+                         },
+                         "attachments": {
+                             "type": "array",
+                             "items": {
+                                 "type": "object",
+                                 "properties": {
+                                     "message_id": {"type": "string"},
+                                     "attachment_id": {"type": "string"},
+                                     "filename": {"type": "string"}
+                                 }
+                             },
+                             "description": "List of attachments to save"
+                         }
+                     },
+                     "required": ["__user_id__", "attachments"]
+                 }
+             )
+         ]
+        
+        return tools
 
-    async with stdio_server() as (read_stream, write_stream):
-        await app.run(
+    @server.call_tool()
+    async def handle_call_tool(
+        name: str, arguments: dict | None
+    ) -> list[types.TextContent | types.ImageContent | types.EmbeddedResource]:
+        """Handle tool calls."""
+        logger.info(f"call_tool: {name} with arguments: {arguments}")
+        
+        try:
+            if not isinstance(arguments, dict):
+                raise RuntimeError("arguments must be dictionary")
+            
+            if "__user_id__" not in arguments:
+                raise RuntimeError("__user_id__ argument is missing")
+
+            user_id = arguments["__user_id__"]
+            
+            # Verify authentication
+            accounts = gauth.get_account_info()
+            if user_id not in [a.email for a in accounts]:
+                raise RuntimeError(f"Account for email: {user_id} not specified in .accounts.json")
+
+            credentials = gauth.get_stored_credentials(user_id=user_id)
+            if not credentials:
+                raise RuntimeError(f"No credentials found for {user_id}. Please run: python auth_setup.py {user_id}")
+            
+            if credentials.access_token_expired:
+                logger.info("Access token expired, attempting refresh...")
+                try:
+                    user_info = gauth.get_user_info(credentials=credentials)
+                    gauth.store_credentials(credentials=credentials, user_id=user_id)
+                    logger.info(f"Successfully refreshed credentials for {user_id}")
+                except Exception as e:
+                    logger.error(f"Failed to refresh credentials: {e}")
+                    raise RuntimeError(f"Failed to refresh credentials for {user_id}: {e}")
+
+            # Handle different tools
+            if name == "list_calendars":
+                from .tools_calendar import ListCalendarsToolHandler
+                handler = ListCalendarsToolHandler()
+                return handler.run_tool(arguments)
+                
+            elif name == "get_calendar_events":
+                from .tools_calendar import GetCalendarEventsToolHandler
+                handler = GetCalendarEventsToolHandler()
+                return handler.run_tool(arguments)
+                
+            elif name == "create_calendar_event":
+                from .tools_calendar import CreateCalendarEventToolHandler
+                handler = CreateCalendarEventToolHandler()
+                return handler.run_tool(arguments)
+                
+            elif name == "query_emails":
+                from .tools_gmail import QueryEmailsToolHandler
+                handler = QueryEmailsToolHandler()
+                return handler.run_tool(arguments)
+                
+            elif name == "get_email_by_id":
+                from .tools_gmail import GetEmailByIdToolHandler
+                handler = GetEmailByIdToolHandler()
+                return handler.run_tool(arguments)
+                
+            elif name == "delete_calendar_event":
+                from .tools_calendar import DeleteCalendarEventToolHandler
+                handler = DeleteCalendarEventToolHandler()
+                return handler.run_tool(arguments)
+                
+            elif name == "update_calendar_event":
+                from .tools_calendar import UpdateCalendarEventToolHandler
+                handler = UpdateCalendarEventToolHandler()
+                return handler.run_tool(arguments)
+                
+            elif name == "create_draft":
+                from .tools_gmail import CreateDraftToolHandler
+                handler = CreateDraftToolHandler()
+                return handler.run_tool(arguments)
+                
+            elif name == "delete_draft":
+                from .tools_gmail import DeleteDraftToolHandler
+                handler = DeleteDraftToolHandler()
+                return handler.run_tool(arguments)
+                
+            elif name == "reply_email":
+                from .tools_gmail import ReplyEmailToolHandler
+                handler = ReplyEmailToolHandler()
+                return handler.run_tool(arguments)
+                
+            elif name == "get_attachment":
+                from .tools_gmail import GetAttachmentToolHandler
+                handler = GetAttachmentToolHandler()
+                return handler.run_tool(arguments)
+                
+            elif name == "bulk_get_emails":
+                from .tools_gmail import BulkGetEmailsByIdsToolHandler
+                handler = BulkGetEmailsByIdsToolHandler()
+                return handler.run_tool(arguments)
+                
+            elif name == "bulk_save_attachments":
+                from .tools_gmail import BulkSaveAttachmentsToolHandler
+                handler = BulkSaveAttachmentsToolHandler()
+                return handler.run_tool(arguments)
+                
+            else:
+                raise ValueError(f"Unknown tool: {name}")
+                
+        except Exception as e:
+            logger.error(traceback.format_exc())
+            logger.error(f"Error during call_tool: {str(e)}")
+            raise RuntimeError(f"Caught Exception. Error: {str(e)}")
+
+    # Start the server
+    logger.info("Starting MCP GSuite server...")
+    
+    async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
+        await server.run(
             read_stream,
             write_stream,
-            app.create_initialization_options()
+            InitializationOptions(
+                server_name="mcp-gsuite",
+                server_version="0.4.1",
+                capabilities=server.get_capabilities(
+                    notification_options=NotificationOptions(),
+                    experimental_capabilities={},
+                ),
+            ),
         )
