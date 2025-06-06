@@ -18,8 +18,8 @@ def create_cursor_mcp_config():
                 "args": [
                     "--directory", 
                     current_dir,
-                    "run",
-                    "mcp-gsuite"
+                            "run",
+        "mcp-gsuite-enhanced"
                 ],
                 "env": {
                     "PYTHONPATH": current_dir,
