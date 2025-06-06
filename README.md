@@ -2,7 +2,7 @@
 
 **Enhanced MCP server for Google Workspace with Google Meet integration and bug fixes**
 
-[![Enhanced Version](https://img.shields.io/badge/Enhanced-Version-brightgreen)](#) 
+[![Enhanced Version](https://img.shields.io/badge/Enhanced-Version-brightgreen)](https://github.com/ajramos/mcp-gsuite-enhanced) 
 [![Original Project](https://img.shields.io/badge/Based%20on-mcp--gsuite-blue)](https://github.com/MarkusPfundstein/mcp-gsuite)
 [![License](https://img.shields.io/badge/License-MIT-green)](#license)
 
