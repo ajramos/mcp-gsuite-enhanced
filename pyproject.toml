@@ -1,14 +1,14 @@
 [project]
 name = "mcp-gsuite-enhanced"
-version = "1.0.1"
-description = "Enhanced MCP server for Google Workspace integration with Google Meet support and bug fixes"
+version = "2.0.0"
+description = "Enhanced MCP server for Google Workspace integration with comprehensive Gmail API coverage and advanced email management"
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [
-    { name = "Angel Ramos", email = "angel@doit.com" },
+    { name = "Angel Ramos" },
     { name = "Markus Pfundstein" }
 ]
-keywords = ["mcp", "google", "gmail", "calendar", "google-meet", "model-context-protocol"]
+keywords = ["mcp", "google", "gmail", "calendar", "google-meet", "email-management", "labels", "archive", "model-context-protocol"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",

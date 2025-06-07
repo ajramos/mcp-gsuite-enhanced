@@ -1,12 +1,12 @@
 # mcp-gsuite-enhanced
 
-**Enhanced MCP server for Google Workspace with Google Meet integration and bug fixes**
+**Comprehensive MCP server for Google Workspace with complete Gmail API coverage and advanced email management**
 
 [![Enhanced Version](https://img.shields.io/badge/Enhanced-Version-brightgreen)](https://github.com/ajramos/mcp-gsuite-enhanced) 
 [![Original Project](https://img.shields.io/badge/Based%20on-mcp--gsuite-blue)](https://github.com/MarkusPfundstein/mcp-gsuite)
 [![License](https://img.shields.io/badge/License-MIT-green)](#license)
 
-MCP server to interact with Google products with enhanced functionality including working Google Meet integration and calendar event updates.
+MCP server to interact with Google products with **complete Gmail API coverage** (27 tools total), advanced email management, label operations, archive workflows, and working Google Meet integration.
 
 ## Table of Contents
 
@@ -88,37 +88,69 @@ Try these commands in Cursor:
 
 ---
 
-## 🎯 Enhanced Features
+## 🎯 Enhanced Features v2.0.0
 
-This enhanced version includes:
+### 🚀 **Complete Gmail API Coverage (27 Tools Total)**
+- **22 Gmail tools** - Complete email lifecycle management
+- **5 Calendar tools** - Full calendar integration with Google Meet
+
+### ✨ **Advanced Email Management**
+- ✅ **Send emails** directly via Gmail
+- ✅ **Label management** - Create, apply, remove, and delete labels
+- ✅ **Archive workflows** - Archive, restore, and manage email lifecycle
+- ✅ **Draft management** - List, create, and manage email drafts
+- ✅ **Bulk operations** - Archive multiple emails efficiently
+- ✅ **Email status** - Mark as read/unread, move to trash
+
+### 🎪 **Enhanced Calendar Features**
 - ✅ **Working Google Meet integration** - Automatic Meet links in calendar events
 - ✅ **Fixed `update_calendar_event`** - Previously broken, now fully functional
 - ✅ **Improved attendee processing** - Fixed email parsing bugs
-- ✅ **Updated dependencies** - Latest Google APIs and MCP version
-- ✅ **Better error handling** - More robust calendar operations
 - ✅ **Setup utilities** - `auth_setup.py` and `cursor_setup.py` for easy configuration
 
 ## Features & Capabilities
 
-Right now, this MCP server supports Gmail and Calendar integration with the following capabilities:
+**v2.0.0 provides comprehensive Google Workspace automation with 27 total tools:**
 
-1. General
-* Multiple google accounts
+### 1. General
+* Multiple Google accounts support
+* OAuth 2.0 authentication with token refresh
+* Comprehensive error handling and logging
 
-2. Gmail
-* Get your Gmail user information
-* Query emails with flexible search (e.g., unread, from specific senders, date ranges, with attachments)
-* Retrieve complete email content by ID
+### 2. Gmail (22 Tools) 📧
+**Email Management**
+* Send emails directly via Gmail with CC/BCC support
+* Query emails with flexible search (unread, senders, dates, attachments)
+* Retrieve complete email content by ID or multiple emails at once
+* Mark emails as read/unread
+* Move emails to trash
+
+**Draft Management**
 * Create new draft emails with recipients, subject, body and CC options
+* List all draft emails with full details
 * Delete draft emails
-* Reply to existing emails (can either send immediately or save as draft)
-* Retrieve multiple emails at once by their IDs
+* Reply to existing emails (send immediately or save as draft)
+
+**Label Management** 🏷️
+* List all Gmail labels (system + custom)
+* Create new custom labels
+* Apply labels to emails
+* Remove labels from emails  
+* Delete custom labels permanently
+
+**Archive Workflows** 📁
+* Archive individual emails (remove from inbox)
+* Archive multiple emails at once (bulk operations)
+* List archived emails
+* Restore archived emails back to inbox
+
+**Attachment Management**
 * Download and save email attachments to local files
 * Bulk save multiple attachments from different emails
 
-3. Calendar
+### 3. Calendar (5 Tools) 📅
 * List available calendars for your account
-* Get calendar events within a specified time range
+* Get calendar events within specified time ranges
 * Create new calendar events with attendees and **automatic Google Meet links** 🎪
 * **Update existing calendar events** (summary, time, attendees) ⚡
 * Delete calendar events
@@ -126,19 +158,33 @@ Right now, this MCP server supports Gmail and Calendar integration with the foll
 
 ## 💡 Example Prompts to Try
 
-### 📧 Gmail Operations
+### 📧 Gmail Operations (22 Tools)
 - **Email Search & Retrieval**
   - *"Retrieve my latest unread messages"*
   - *"Search my emails from the Scrum Master"*
-  - *"Retrieve all emails from accounting"*
-  - *"Take the email about ABC and summarize it"*
+  - *"Show me all emails with attachments from this week"*
+  - *"Get the email about ABC and summarize it"*
 
-- **Email Composition & Replies**  
-  - *"Write a nice response to Alice's last email and upload a draft"*
-  - *"Reply to Bob's email with a Thank you note. Store it as draft"*
+- **Email Composition & Management**  
+  - *"Send an email to john@company.com about the project update"*
+  - *"Write a nice response to Alice's last email and save as draft"*
+  - *"Mark all emails from marketing@company.com as read"*
+  - *"Move that spam email to trash"*
+
+- **Label Management** 🏷️
+  - *"Create a label called 'Project Alpha' and apply it to emails about the project"*
+  - *"Show me all my custom labels"*
+  - *"Remove the 'Urgent' label from yesterday's email"*
+  - *"Delete the unused 'Old Project' label"*
+
+- **Archive Workflows** 📁
+  - *"Archive all emails from last week's newsletter"*
+  - *"Show me my archived emails from Q3"*
+  - *"Restore that important email back to my inbox"*
+  - *"Archive these 5 emails at once: [email IDs]"*
 
 - **Attachment Management**
-  - *"Download all attachments from emails with subject containing 'invoice'"*
+  - *"Download all attachments from emails containing 'invoice'"*
   - *"Save attachments from all emails from john@company.com this week"*
 
 ### 📅 Calendar Management
