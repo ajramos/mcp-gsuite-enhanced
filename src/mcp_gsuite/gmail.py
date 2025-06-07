@@ -501,3 +501,161 @@ class GmailService():
         except Exception as e:
             logging.error(f"Error getting unread emails: {str(e)}")
             return []
+
+    def mark_email_read(self, email_id: str) -> bool:
+        """Mark an email as read"""
+        try:
+            self.service.users().messages().modify(
+                userId='me',
+                id=email_id,
+                body={'removeLabelIds': ['UNREAD']}
+            ).execute()
+            return True
+        except Exception as e:
+            logging.error(f"Error marking email {email_id} as read: {str(e)}")
+            return False
+
+    def trash_email(self, email_id: str) -> bool:
+        """Move an email to trash"""
+        try:
+            self.service.users().messages().trash(
+                userId='me',
+                id=email_id
+            ).execute()
+            return True
+        except Exception as e:
+            logging.error(f"Error moving email {email_id} to trash: {str(e)}")
+            return False
+
+    def list_labels(self) -> list:
+        """List all Gmail labels"""
+        try:
+            result = self.service.users().labels().list(userId='me').execute()
+            labels = result.get('labels', [])
+            return [{'id': label['id'], 'name': label['name'], 'type': label.get('type', 'user')} for label in labels]
+        except Exception as e:
+            logging.error(f"Error listing labels: {str(e)}")
+            return []
+
+    def create_label(self, name: str, visibility: str = 'labelShow') -> dict:
+        """Create a new Gmail label"""
+        try:
+            label = {
+                'name': name,
+                'labelListVisibility': visibility,
+                'messageListVisibility': 'show'
+            }
+            result = self.service.users().labels().create(
+                userId='me',
+                body=label
+            ).execute()
+            return {'status': 'success', 'label_id': result['id'], 'name': result['name']}
+        except Exception as e:
+            logging.error(f"Error creating label '{name}': {str(e)}")
+            return {'status': 'error', 'error_message': str(e)}
+
+    def apply_label(self, email_id: str, label_id: str) -> bool:
+        """Apply a label to an email"""
+        try:
+            self.service.users().messages().modify(
+                userId='me',
+                id=email_id,
+                body={'addLabelIds': [label_id]}
+            ).execute()
+            return True
+        except Exception as e:
+            logging.error(f"Error applying label {label_id} to email {email_id}: {str(e)}")
+            return False
+
+    def remove_label(self, email_id: str, label_id: str) -> bool:
+        """Remove a label from an email"""
+        try:
+            self.service.users().messages().modify(
+                userId='me',
+                id=email_id,
+                body={'removeLabelIds': [label_id]}
+            ).execute()
+            return True
+        except Exception as e:
+            logging.error(f"Error removing label {label_id} from email {email_id}: {str(e)}")
+            return False
+
+    def archive_email(self, email_id: str) -> bool:
+        """Archive an email (remove from inbox)"""
+        try:
+            self.service.users().messages().modify(
+                userId='me',
+                id=email_id,
+                body={'removeLabelIds': ['INBOX']}
+            ).execute()
+            return True
+        except Exception as e:
+            logging.error(f"Error archiving email {email_id}: {str(e)}")
+            return False
+
+    def batch_archive_emails(self, email_ids: list[str]) -> dict:
+        """Archive multiple emails at once"""
+        try:
+            success_count = 0
+            failed_ids = []
+            
+            for email_id in email_ids:
+                if self.archive_email(email_id):
+                    success_count += 1
+                else:
+                    failed_ids.append(email_id)
+            
+            return {
+                'status': 'completed',
+                'total': len(email_ids),
+                'success': success_count,
+                'failed': len(failed_ids),
+                'failed_ids': failed_ids
+            }
+        except Exception as e:
+            logging.error(f"Error in batch archive: {str(e)}")
+            return {'status': 'error', 'error_message': str(e)}
+
+    def list_archived_emails(self, max_results: int = 100) -> list:
+        """List archived emails (not in inbox but not in trash)"""
+        try:
+            result = self.service.users().messages().list(
+                userId='me',
+                q='-in:inbox -in:trash',
+                maxResults=max_results
+            ).execute()
+            
+            messages = result.get('messages', [])
+            parsed = []
+            
+            for msg in messages:
+                try:
+                    txt = self.service.users().messages().get(
+                        userId='me', 
+                        id=msg['id']
+                    ).execute()
+                    parsed_message = self._parse_message(txt=txt, parse_body=True)
+                    if parsed_message:
+                        parsed.append(parsed_message)
+                except Exception as e:
+                    logging.error(f"Error parsing archived email {msg['id']}: {str(e)}")
+                    continue
+                    
+            return parsed
+            
+        except Exception as e:
+            logging.error(f"Error getting archived emails: {str(e)}")
+            return []
+
+    def restore_email_to_inbox(self, email_id: str) -> bool:
+        """Restore an archived email back to inbox"""
+        try:
+            self.service.users().messages().modify(
+                userId='me',
+                id=email_id,
+                body={'addLabelIds': ['INBOX']}
+            ).execute()
+            return True
+        except Exception as e:
+            logging.error(f"Error restoring email {email_id} to inbox: {str(e)}")
+            return False

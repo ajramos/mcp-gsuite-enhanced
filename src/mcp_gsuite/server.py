@@ -443,6 +443,198 @@ async def main():
                      },
                      "required": ["__user_id__"]
                  }
+             ),
+             # Advanced Gmail management tools
+             types.Tool(
+                 name="mark_email_read",
+                 description="Mark a Gmail email as read",
+                 inputSchema={
+                     "type": "object",
+                     "properties": {
+                         "__user_id__": {
+                             "type": "string",
+                             "description": f"The EMAIL of the Google account. Available accounts: {', '.join([a.email for a in accounts])}"
+                         },
+                         "email_id": {
+                             "type": "string",
+                             "description": "The ID of the email to mark as read"
+                         }
+                     },
+                     "required": ["__user_id__", "email_id"]
+                 }
+             ),
+             types.Tool(
+                 name="trash_email",
+                 description="Move a Gmail email to trash",
+                 inputSchema={
+                     "type": "object",
+                     "properties": {
+                         "__user_id__": {
+                             "type": "string",
+                             "description": f"The EMAIL of the Google account. Available accounts: {', '.join([a.email for a in accounts])}"
+                         },
+                         "email_id": {
+                             "type": "string",
+                             "description": "The ID of the email to move to trash"
+                         }
+                     },
+                     "required": ["__user_id__", "email_id"]
+                 }
+             ),
+             types.Tool(
+                 name="list_labels",
+                 description="List all Gmail labels",
+                 inputSchema={
+                     "type": "object",
+                     "properties": {
+                         "__user_id__": {
+                             "type": "string",
+                             "description": f"The EMAIL of the Google account. Available accounts: {', '.join([a.email for a in accounts])}"
+                         }
+                     },
+                     "required": ["__user_id__"]
+                 }
+             ),
+             types.Tool(
+                 name="create_label",
+                 description="Create a new Gmail label",
+                 inputSchema={
+                     "type": "object",
+                     "properties": {
+                         "__user_id__": {
+                             "type": "string",
+                             "description": f"The EMAIL of the Google account. Available accounts: {', '.join([a.email for a in accounts])}"
+                         },
+                         "name": {
+                             "type": "string",
+                             "description": "Name of the label to create"
+                         },
+                         "visibility": {
+                             "type": "string",
+                             "description": "Label visibility (labelShow, labelHide)",
+                             "default": "labelShow"
+                         }
+                     },
+                     "required": ["__user_id__", "name"]
+                 }
+             ),
+             types.Tool(
+                 name="apply_label",
+                 description="Apply a label to a Gmail email",
+                 inputSchema={
+                     "type": "object",
+                     "properties": {
+                         "__user_id__": {
+                             "type": "string",
+                             "description": f"The EMAIL of the Google account. Available accounts: {', '.join([a.email for a in accounts])}"
+                         },
+                         "email_id": {
+                             "type": "string",
+                             "description": "The ID of the email"
+                         },
+                         "label_id": {
+                             "type": "string",
+                             "description": "The ID of the label to apply"
+                         }
+                     },
+                     "required": ["__user_id__", "email_id", "label_id"]
+                 }
+             ),
+             types.Tool(
+                 name="remove_label",
+                 description="Remove a label from a Gmail email",
+                 inputSchema={
+                     "type": "object",
+                     "properties": {
+                         "__user_id__": {
+                             "type": "string",
+                             "description": f"The EMAIL of the Google account. Available accounts: {', '.join([a.email for a in accounts])}"
+                         },
+                         "email_id": {
+                             "type": "string",
+                             "description": "The ID of the email"
+                         },
+                         "label_id": {
+                             "type": "string",
+                             "description": "The ID of the label to remove"
+                         }
+                     },
+                     "required": ["__user_id__", "email_id", "label_id"]
+                 }
+             ),
+             types.Tool(
+                 name="archive_email",
+                 description="Archive a Gmail email (remove from inbox)",
+                 inputSchema={
+                     "type": "object",
+                     "properties": {
+                         "__user_id__": {
+                             "type": "string",
+                             "description": f"The EMAIL of the Google account. Available accounts: {', '.join([a.email for a in accounts])}"
+                         },
+                         "email_id": {
+                             "type": "string",
+                             "description": "The ID of the email to archive"
+                         }
+                     },
+                     "required": ["__user_id__", "email_id"]
+                 }
+             ),
+             types.Tool(
+                 name="batch_archive_emails",
+                 description="Archive multiple Gmail emails at once",
+                 inputSchema={
+                     "type": "object",
+                     "properties": {
+                         "__user_id__": {
+                             "type": "string",
+                             "description": f"The EMAIL of the Google account. Available accounts: {', '.join([a.email for a in accounts])}"
+                         },
+                         "email_ids": {
+                             "type": "array",
+                             "items": {"type": "string"},
+                             "description": "List of email IDs to archive"
+                         }
+                     },
+                     "required": ["__user_id__", "email_ids"]
+                 }
+             ),
+             types.Tool(
+                 name="list_archived_emails",
+                 description="List archived Gmail emails",
+                 inputSchema={
+                     "type": "object",
+                     "properties": {
+                         "__user_id__": {
+                             "type": "string",
+                             "description": f"The EMAIL of the Google account. Available accounts: {', '.join([a.email for a in accounts])}"
+                         },
+                         "max_results": {
+                             "type": "integer",
+                             "description": "Maximum number of archived emails to return (default: 100)",
+                             "default": 100
+                         }
+                     },
+                     "required": ["__user_id__"]
+                 }
+             ),
+             types.Tool(
+                 name="restore_email_to_inbox",
+                 description="Restore an archived email back to inbox",
+                 inputSchema={
+                     "type": "object",
+                     "properties": {
+                         "__user_id__": {
+                             "type": "string",
+                             "description": f"The EMAIL of the Google account. Available accounts: {', '.join([a.email for a in accounts])}"
+                         },
+                         "email_id": {
+                             "type": "string",
+                             "description": "The ID of the email to restore to inbox"
+                         }
+                     },
+                     "required": ["__user_id__", "email_id"]
+                 }
              )
          ]
         
@@ -494,7 +686,11 @@ async def main():
                 CreateDraftToolHandler, DeleteDraftToolHandler,
                 ReplyEmailToolHandler, GetAttachmentToolHandler,
                 BulkGetEmailsByIdsToolHandler, BulkSaveAttachmentsToolHandler,
-                SendEmailToolHandler, ListDraftsToolHandler, GetUnreadEmailsToolHandler
+                SendEmailToolHandler, ListDraftsToolHandler, GetUnreadEmailsToolHandler,
+                MarkEmailReadToolHandler, TrashEmailToolHandler, ListLabelsToolHandler,
+                CreateLabelToolHandler, ApplyLabelToolHandler, RemoveLabelToolHandler,
+                ArchiveEmailToolHandler, BatchArchiveEmailsToolHandler, 
+                ListArchivedEmailsToolHandler, RestoreEmailToInboxToolHandler
             )
             
             # Tool handler registry
@@ -516,6 +712,17 @@ async def main():
                 "send_email": SendEmailToolHandler,
                 "list_drafts": ListDraftsToolHandler,
                 "get_unread_emails": GetUnreadEmailsToolHandler,
+                # Advanced Gmail management tools
+                "mark_email_read": MarkEmailReadToolHandler,
+                "trash_email": TrashEmailToolHandler,
+                "list_labels": ListLabelsToolHandler,
+                "create_label": CreateLabelToolHandler,
+                "apply_label": ApplyLabelToolHandler,
+                "remove_label": RemoveLabelToolHandler,
+                "archive_email": ArchiveEmailToolHandler,
+                "batch_archive_emails": BatchArchiveEmailsToolHandler,
+                "list_archived_emails": ListArchivedEmailsToolHandler,
+                "restore_email_to_inbox": RestoreEmailToInboxToolHandler,
             }
             
             if name in tool_handlers:
