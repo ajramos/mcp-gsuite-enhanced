@@ -412,72 +412,40 @@ async def main():
                     logger.error(f"Failed to refresh credentials: {e}")
                     raise RuntimeError(f"Failed to refresh credentials for {user_id}: {e}")
 
-            # Handle different tools
-            if name == "list_calendars":
-                from .tools_calendar import ListCalendarsToolHandler
-                handler = ListCalendarsToolHandler()
+            # Handle different tools using registry
+            from .tools_calendar import (
+                ListCalendarsToolHandler, GetCalendarEventsToolHandler, 
+                CreateCalendarEventToolHandler, DeleteCalendarEventToolHandler,
+                UpdateCalendarEventToolHandler
+            )
+            from .tools_gmail import (
+                QueryEmailsToolHandler, GetEmailByIdToolHandler, 
+                CreateDraftToolHandler, DeleteDraftToolHandler,
+                ReplyEmailToolHandler, GetAttachmentToolHandler,
+                BulkGetEmailsByIdsToolHandler, BulkSaveAttachmentsToolHandler
+            )
+            
+            # Tool handler registry
+            tool_handlers = {
+                "list_calendars": ListCalendarsToolHandler,
+                "get_calendar_events": GetCalendarEventsToolHandler,
+                "create_calendar_event": CreateCalendarEventToolHandler,
+                "delete_calendar_event": DeleteCalendarEventToolHandler,
+                "update_calendar_event": UpdateCalendarEventToolHandler,
+                "query_emails": QueryEmailsToolHandler,
+                "get_email_by_id": GetEmailByIdToolHandler,
+                "create_draft": CreateDraftToolHandler,
+                "delete_draft": DeleteDraftToolHandler,
+                "reply_email": ReplyEmailToolHandler,
+                "get_attachment": GetAttachmentToolHandler,
+                "bulk_get_emails": BulkGetEmailsByIdsToolHandler,
+                "bulk_save_attachments": BulkSaveAttachmentsToolHandler,
+            }
+            
+            if name in tool_handlers:
+                handler_class = tool_handlers[name]
+                handler = handler_class()
                 return handler.run_tool(arguments)
-                
-            elif name == "get_calendar_events":
-                from .tools_calendar import GetCalendarEventsToolHandler
-                handler = GetCalendarEventsToolHandler()
-                return handler.run_tool(arguments)
-                
-            elif name == "create_calendar_event":
-                from .tools_calendar import CreateCalendarEventToolHandler
-                handler = CreateCalendarEventToolHandler()
-                return handler.run_tool(arguments)
-                
-            elif name == "query_emails":
-                from .tools_gmail import QueryEmailsToolHandler
-                handler = QueryEmailsToolHandler()
-                return handler.run_tool(arguments)
-                
-            elif name == "get_email_by_id":
-                from .tools_gmail import GetEmailByIdToolHandler
-                handler = GetEmailByIdToolHandler()
-                return handler.run_tool(arguments)
-                
-            elif name == "delete_calendar_event":
-                from .tools_calendar import DeleteCalendarEventToolHandler
-                handler = DeleteCalendarEventToolHandler()
-                return handler.run_tool(arguments)
-                
-            elif name == "update_calendar_event":
-                from .tools_calendar import UpdateCalendarEventToolHandler
-                handler = UpdateCalendarEventToolHandler()
-                return handler.run_tool(arguments)
-                
-            elif name == "create_draft":
-                from .tools_gmail import CreateDraftToolHandler
-                handler = CreateDraftToolHandler()
-                return handler.run_tool(arguments)
-                
-            elif name == "delete_draft":
-                from .tools_gmail import DeleteDraftToolHandler
-                handler = DeleteDraftToolHandler()
-                return handler.run_tool(arguments)
-                
-            elif name == "reply_email":
-                from .tools_gmail import ReplyEmailToolHandler
-                handler = ReplyEmailToolHandler()
-                return handler.run_tool(arguments)
-                
-            elif name == "get_attachment":
-                from .tools_gmail import GetAttachmentToolHandler
-                handler = GetAttachmentToolHandler()
-                return handler.run_tool(arguments)
-                
-            elif name == "bulk_get_emails":
-                from .tools_gmail import BulkGetEmailsByIdsToolHandler
-                handler = BulkGetEmailsByIdsToolHandler()
-                return handler.run_tool(arguments)
-                
-            elif name == "bulk_save_attachments":
-                from .tools_gmail import BulkSaveAttachmentsToolHandler
-                handler = BulkSaveAttachmentsToolHandler()
-                return handler.run_tool(arguments)
-                
             else:
                 raise ValueError(f"Unknown tool: {name}")
                 
