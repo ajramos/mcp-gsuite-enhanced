@@ -11,14 +11,26 @@ startCommand:
     properties:
       gauthFile:
         type: string
-        description: Path to the OAuth2 client configuration file.
+        description: Path to the OAuth2 client configuration file (.gauth.json)
       accountsFile:
         type: string
-        description: Path to the Google accounts configuration file.
+        description: Path to the Google accounts configuration file (.accounts.json)
       credentialsDir:
         type: string
-        description: Directory where OAuth credentials are stored.
+        description: Directory where OAuth credentials are stored (optional, defaults to current directory)
+        default: "."
   commandFunction:
     # A function that produces the CLI command to start the MCP on stdio.
     |-
-    (config) => ({command: 'uv', args: ['run', 'mcp-gsuite', '--gauth-file', config.gauthFile, '--accounts-file', config.accountsFile, '--credentials-dir', config.credentialsDir]})
+    (config) => ({
+      command: 'uv', 
+      args: [
+        'run', 
+        'mcp-gsuite-enhanced', 
+        '--gauth-file', 
+        config.gauthFile, 
+        '--accounts-file', 
+        config.accountsFile, 
+        ...(config.credentialsDir ? ['--credentials-dir', config.credentialsDir] : [])
+      ]
+    })
