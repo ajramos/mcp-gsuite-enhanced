@@ -466,7 +466,14 @@ Get-Content "$env:APPDATA\Claude\logs\mcp-server-mcp-gsuite-enhanced.log" -Wait 
 
 Based on [mcp-gsuite](https://github.com/MarkusPfundstein/mcp-gsuite) by Markus Pfundstein.
 
-Enhanced with Google Meet integration, bug fixes, and improved functionality by Angel Ramos.
+Enhanced with comprehensive Gmail API coverage, Google Meet integration, and improved functionality by Angel Ramos.
+
+### Acknowledgments
+
+- Original project: [mcp-gsuite](https://github.com/MarkusPfundstein/mcp-gsuite) by Markus Pfundstein (MIT License)
+- Gmail functionality inspired by community MCP implementations, including [Gmail-MCP-server](https://github.com/Vijay-2005/Gmail-MCP-server)
+- All code independently implemented using official Google APIs documentation
+- Licensed under MIT - no GPL code was incorporated
 
 ## License
 
