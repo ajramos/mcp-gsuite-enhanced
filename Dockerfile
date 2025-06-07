@@ -25,14 +25,17 @@ FROM python:3.13-slim-bookworm
 
 WORKDIR /app
 
-COPY --from=uv /root/.local /root/.local
-COPY --from=uv --chown=app:app /app/.venv /app/.venv
+# Copy the virtual environment from the build stage
+COPY --from=uv /app/.venv /app/.venv
 
 # Place executables in the environment at the front of the path
 ENV PATH="/app/.venv/bin:$PATH"
+
+# Copy the application source code
+COPY --from=uv /app /app
 
 # Expose necessary ports
 EXPOSE 4100
 
 # Specify the entrypoint command
-ENTRYPOINT ["uv", "run", "mcp-gsuite-enhanced"]
+ENTRYPOINT ["mcp-gsuite-enhanced"]
