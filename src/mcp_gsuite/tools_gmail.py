@@ -551,3 +551,154 @@ class BulkSaveAttachmentsToolHandler(toolhandler.ToolHandler):
                 continue
 
         return results
+
+class SendEmailToolHandler(toolhandler.ToolHandler):
+    def __init__(self):
+        super().__init__("send_gmail_email")
+
+    def get_tool_description(self) -> Tool:
+        return Tool(
+            name=self.name,
+            description="Send an email message directly through Gmail",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "__user_id__": self.get_user_id_arg_schema(),
+                    "to": {
+                        "type": "string",
+                        "description": "Recipient email address"
+                    },
+                    "subject": {
+                        "type": "string",
+                        "description": "Email subject"
+                    },
+                    "body": {
+                        "type": "string",
+                        "description": "Email body content"
+                    },
+                    "cc": {
+                        "type": "string",
+                        "description": "CC recipients (comma-separated)"
+                    },
+                    "bcc": {
+                        "type": "string",
+                        "description": "BCC recipients (comma-separated)"
+                    }
+                },
+                "required": ["to", "subject", "body", toolhandler.USER_ID_ARG]
+            }
+        )
+
+    def run_tool(self, args: dict) -> Sequence[TextContent | ImageContent | EmbeddedResource]:
+        user_id = args.get(toolhandler.USER_ID_ARG)
+        if not user_id:
+            raise RuntimeError(f"Missing required argument: {toolhandler.USER_ID_ARG}")
+        
+        gmail_service = gmail.GmailService(user_id=user_id)
+        result = gmail_service.send_email(
+            to=args["to"],
+            subject=args["subject"],
+            body=args["body"],
+            cc=args.get("cc"),
+            bcc=args.get("bcc")
+        )
+
+        return [
+            TextContent(
+                type="text",
+                text=json.dumps(result, indent=2)
+            )
+        ]
+
+class ListDraftsToolHandler(toolhandler.ToolHandler):
+    def __init__(self):
+        super().__init__("list_gmail_drafts")
+
+    def get_tool_description(self) -> Tool:
+        return Tool(
+            name=self.name,
+            description="List all draft emails in Gmail",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "__user_id__": self.get_user_id_arg_schema(),
+                    "max_results": {
+                        "type": "integer",
+                        "description": "Maximum number of drafts to return",
+                        "default": 50
+                    }
+                },
+                "required": [toolhandler.USER_ID_ARG]
+            }
+        )
+
+    def run_tool(self, args: dict) -> Sequence[TextContent | ImageContent | EmbeddedResource]:
+        user_id = args.get(toolhandler.USER_ID_ARG)
+        if not user_id:
+            raise RuntimeError(f"Missing required argument: {toolhandler.USER_ID_ARG}")
+        
+        gmail_service = gmail.GmailService(user_id=user_id)
+        max_results = args.get("max_results", 50)
+        drafts = gmail_service.list_drafts(max_results=max_results)
+
+        return [
+            TextContent(
+                type="text",
+                text=json.dumps(drafts, indent=2)
+            )
+        ]
+
+class GetUnreadEmailsToolHandler(toolhandler.ToolHandler):
+    def __init__(self):
+        super().__init__("get_unread_gmail_emails")
+
+    def get_tool_description(self) -> Tool:
+        return Tool(
+            name=self.name,
+            description="Get all unread emails from Gmail",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "__user_id__": self.get_user_id_arg_schema(),
+                    "max_results": {
+                        "type": "integer",
+                        "description": "Maximum number of unread emails to return",
+                        "default": 100
+                    }
+                },
+                "required": [toolhandler.USER_ID_ARG]
+            }
+        )
+
+    def run_tool(self, args: dict) -> Sequence[TextContent | ImageContent | EmbeddedResource]:
+        user_id = args.get(toolhandler.USER_ID_ARG)
+        if not user_id:
+            raise RuntimeError(f"Missing required argument: {toolhandler.USER_ID_ARG}")
+        
+        gmail_service = gmail.GmailService(user_id=user_id)
+        max_results = args.get("max_results", 100)
+        unread_emails = gmail_service.get_unread_emails(max_results=max_results)
+
+        return [
+            TextContent(
+                type="text",
+                text=json.dumps(unread_emails, indent=2)
+            )
+        ]
+
+# Tool handlers registry - v1.0.1 tools + Step 2 additions
+TOOL_HANDLERS = {
+    # Original v1.0.1 tools
+    "query_emails": QueryEmailsToolHandler,
+    "get_email_by_id": GetEmailByIdToolHandler,
+    "create_draft": CreateDraftToolHandler,
+    "delete_draft": DeleteDraftToolHandler,
+    "reply_email": ReplyEmailToolHandler,
+    "get_attachment": GetAttachmentToolHandler,
+    "bulk_get_emails": BulkGetEmailsByIdsToolHandler,
+    "bulk_save_attachments": BulkSaveAttachmentsToolHandler,
+    # Step 2 additions
+    "send_gmail_email": SendEmailToolHandler,
+    "list_gmail_drafts": ListDraftsToolHandler,
+    "get_unread_gmail_emails": GetUnreadEmailsToolHandler,
+}

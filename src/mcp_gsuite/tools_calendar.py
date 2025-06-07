@@ -390,3 +390,12 @@ class UpdateCalendarEventToolHandler(toolhandler.ToolHandler):
                 text=json.dumps(updated_event, indent=2)
             )
         ]
+
+# Tool handlers registry - Current v1.0.1 tools
+TOOL_HANDLERS = {
+    "list_calendars": ListCalendarsToolHandler,
+    "get_calendar_events": GetCalendarEventsToolHandler,
+    "create_calendar_event": CreateCalendarEventToolHandler,
+    "delete_calendar_event": DeleteCalendarEventToolHandler,
+    "update_calendar_event": UpdateCalendarEventToolHandler,
+}

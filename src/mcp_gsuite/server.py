@@ -372,6 +372,77 @@ async def main():
                      },
                      "required": ["__user_id__", "attachments"]
                  }
+             ),
+             # Additional Gmail tools
+             types.Tool(
+                 name="send_email",
+                 description="Send an email via Gmail",
+                 inputSchema={
+                     "type": "object",
+                     "properties": {
+                         "__user_id__": {
+                             "type": "string",
+                             "description": f"The EMAIL of the Google account. Available accounts: {', '.join([a.email for a in accounts])}"
+                         },
+                         "to": {
+                             "type": "string",
+                             "description": "Recipient email address"
+                         },
+                         "subject": {
+                             "type": "string",
+                             "description": "Email subject"
+                         },
+                         "body": {
+                             "type": "string",
+                             "description": "Email body content"
+                         },
+                         "cc": {
+                             "type": "string",
+                             "description": "CC recipients (optional)"
+                         },
+                         "bcc": {
+                             "type": "string",
+                             "description": "BCC recipients (optional)"
+                         }
+                     },
+                     "required": ["__user_id__", "to", "subject", "body"]
+                 }
+             ),
+             types.Tool(
+                 name="list_drafts",
+                 description="List Gmail drafts",
+                 inputSchema={
+                     "type": "object",
+                     "properties": {
+                         "__user_id__": {
+                             "type": "string",
+                             "description": f"The EMAIL of the Google account. Available accounts: {', '.join([a.email for a in accounts])}"
+                         },
+                         "max_results": {
+                             "type": "integer",
+                             "description": "Maximum number of drafts to return (default: 10)"
+                         }
+                     },
+                     "required": ["__user_id__"]
+                 }
+             ),
+             types.Tool(
+                 name="get_unread_emails",
+                 description="Get unread Gmail emails",
+                 inputSchema={
+                     "type": "object",
+                     "properties": {
+                         "__user_id__": {
+                             "type": "string",
+                             "description": f"The EMAIL of the Google account. Available accounts: {', '.join([a.email for a in accounts])}"
+                         },
+                         "max_results": {
+                             "type": "integer",
+                             "description": "Maximum number of emails to return (default: 10)"
+                         }
+                     },
+                     "required": ["__user_id__"]
+                 }
              )
          ]
         
@@ -422,7 +493,8 @@ async def main():
                 QueryEmailsToolHandler, GetEmailByIdToolHandler, 
                 CreateDraftToolHandler, DeleteDraftToolHandler,
                 ReplyEmailToolHandler, GetAttachmentToolHandler,
-                BulkGetEmailsByIdsToolHandler, BulkSaveAttachmentsToolHandler
+                BulkGetEmailsByIdsToolHandler, BulkSaveAttachmentsToolHandler,
+                SendEmailToolHandler, ListDraftsToolHandler, GetUnreadEmailsToolHandler
             )
             
             # Tool handler registry
@@ -440,6 +512,10 @@ async def main():
                 "get_attachment": GetAttachmentToolHandler,
                 "bulk_get_emails": BulkGetEmailsByIdsToolHandler,
                 "bulk_save_attachments": BulkSaveAttachmentsToolHandler,
+                # Step 2 additions
+                "send_email": SendEmailToolHandler,
+                "list_drafts": ListDraftsToolHandler,
+                "get_unread_emails": GetUnreadEmailsToolHandler,
             }
             
             if name in tool_handlers:

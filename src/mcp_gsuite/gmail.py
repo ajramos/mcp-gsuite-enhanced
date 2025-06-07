@@ -4,6 +4,7 @@ import logging
 import base64
 import traceback
 from email.mime.text import MIMEText
+from email.message import EmailMessage
 from typing import Tuple
 
 
@@ -402,3 +403,101 @@ class GmailService():
             logging.error(f"Error retrieving attachment {attachment_id} from message {message_id}: {str(e)}")
             logging.error(traceback.format_exc())
             return None
+
+    def send_email(self, to: str, subject: str, body: str, cc: str = None, bcc: str = None) -> dict:
+        """Send an email message directly through Gmail"""
+        try:
+            message = EmailMessage()
+            message["To"] = to
+            message["Subject"] = subject
+            message.set_content(body)
+            
+            if cc:
+                message["Cc"] = cc
+            if bcc:
+                message["Bcc"] = bcc
+
+            # Encode message
+            encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
+            create_message = {'raw': encoded_message}
+            
+            send_message = self.service.users().messages().send(
+                userId="me", 
+                body=create_message
+            ).execute()
+            
+            return {
+                "status": "success", 
+                "message_id": send_message['id'],
+                "to": to,
+                "subject": subject
+            }
+            
+        except Exception as e:
+            logging.error(f"Error sending email: {str(e)}")
+            return {"status": "error", "error_message": str(e)}
+
+    def list_drafts(self, max_results: int = 50) -> list:
+        """List all draft emails in Gmail"""
+        try:
+            result = self.service.users().drafts().list(
+                userId='me',
+                maxResults=max_results
+            ).execute()
+            
+            drafts = result.get('drafts', [])
+            parsed_drafts = []
+            
+            for draft in drafts:
+                try:
+                    draft_detail = self.service.users().drafts().get(
+                        userId='me',
+                        id=draft['id']
+                    ).execute()
+                    
+                    message = draft_detail.get('message', {})
+                    parsed_draft = self._parse_message(txt=message, parse_body=True)
+                    if parsed_draft:
+                        parsed_draft['draft_id'] = draft['id']
+                        parsed_drafts.append(parsed_draft)
+                        
+                except Exception as e:
+                    logging.error(f"Error parsing draft {draft['id']}: {str(e)}")
+                    continue
+                    
+            return parsed_drafts
+            
+        except Exception as e:
+            logging.error(f"Error listing drafts: {str(e)}")
+            return []
+
+    def get_unread_emails(self, max_results: int = 100) -> list:
+        """Get all unread emails from Gmail"""
+        try:
+            result = self.service.users().messages().list(
+                userId='me',
+                q='is:unread',
+                maxResults=max_results
+            ).execute()
+            
+            messages = result.get('messages', [])
+            parsed = []
+            
+            for msg in messages:
+                try:
+                    txt = self.service.users().messages().get(
+                        userId='me', 
+                        id=msg['id']
+                    ).execute()
+                    parsed_message = self._parse_message(txt=txt, parse_body=True)
+                    if parsed_message:
+                        parsed.append(parsed_message)
+                except Exception as e:
+                    logging.error(f"Error parsing unread email {msg['id']}: {str(e)}")
+                    continue
+                    
+            return parsed
+            
+        except Exception as e:
+            logging.error(f"Error getting unread emails: {str(e)}")
+            return []
