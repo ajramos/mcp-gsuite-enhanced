@@ -211,11 +211,24 @@ Try these commands in Cursor:
 
 ## Install
 
-### Option 1: Enhanced Version (Recommended) 🚀
+### Option 1: Quick Install via Smithery (Recommended) 📦
 
-This enhanced version includes all the Google Meet fixes and improvements.
+The fastest way to get started with MCP GSuite Enhanced:
 
-#### Cursor IDE Setup (Recommended)
+```bash
+npx -y @smithery/cli install mcp-gsuite-enhanced --client claude
+```
+
+This will automatically:
+- ✅ Download and install the latest version
+- ✅ Configure Claude Desktop for you
+- ✅ Set up the MCP server entry
+
+### Option 2: Manual Installation 🔧
+
+For advanced users or development purposes:
+
+#### Cursor IDE Setup
 
 For Cursor IDE users, use the setup helper script:
 
@@ -225,38 +238,23 @@ python cursor_setup.py
 
 This will generate the correct MCP configuration and provide step-by-step instructions for adding it to your Cursor settings.
 
-#### Manual Installation
-
-You can install this enhanced version using uv (recommended):
+#### Manual Installation with uv (Recommended)
 
 ```bash
-# Clone and install from source (until published)
 git clone https://github.com/ajramos/mcp-gsuite-enhanced
 cd mcp-gsuite-enhanced
 uv sync
 ```
 
-Or with pip:
+#### Manual Installation with pip
 
 ```bash
-# Clone and install from source (until published)
 git clone https://github.com/ajramos/mcp-gsuite-enhanced
 cd mcp-gsuite-enhanced
 pip install -e .
 ```
 
-### Option 2: Original Version via Smithery 📦
 
-If you prefer the original version (without the Google Meet enhancements), you can install it via Smithery:
-
-```bash
-npx -y @smithery/cli install mcp-gsuite --client claude
-```
-
-**Note:** The original version has some limitations:
-- ❌ Google Meet integration may not work reliably
-- ❌ `update_calendar_event` functionality has known issues
-- ❌ Attendee processing bugs
 
 ## Setup Google Authentication
 
@@ -361,20 +359,11 @@ Add this to your Claude Desktop configuration:
 }
 ```
 
-#### Claude Desktop (Original Version)
+#### Claude Desktop (Smithery Installation)
 
-If you installed via Smithery, your configuration is automatically handled. Alternatively:
+If you installed via Smithery, your configuration is automatically handled! No manual setup needed.
 
-```json
-{
-  "mcpServers": {
-    "mcp-gsuite": {
-      "command": "uvx",
-      "args": ["mcp-gsuite"]
-    }
-  }
-}
-```
+
 
 #### Using with uvx (Enhanced Version)
 
