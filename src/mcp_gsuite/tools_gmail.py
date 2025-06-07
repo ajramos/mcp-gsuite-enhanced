@@ -1067,6 +1067,39 @@ class RestoreEmailToInboxToolHandler(toolhandler.ToolHandler):
         
         return [TextContent(type="text", text=json.dumps(result, indent=2))]
 
+class DeleteLabelToolHandler(toolhandler.ToolHandler):
+    def __init__(self):
+        super().__init__("delete_label")
+
+    def get_tool_description(self) -> Tool:
+        return Tool(
+            name=self.name,
+            description="Delete a Gmail label",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "__user_id__": self.get_user_id_arg_schema(),
+                    "label_id": {
+                        "type": "string",
+                        "description": "The ID of the label to delete"
+                    }
+                },
+                "required": ["label_id", toolhandler.USER_ID_ARG]
+            }
+        )
+
+    def run_tool(self, args: dict) -> Sequence[TextContent | ImageContent | EmbeddedResource]:
+        user_id = args.get(toolhandler.USER_ID_ARG)
+        label_id = args.get("label_id")
+        
+        if not user_id or not label_id:
+            raise RuntimeError("Missing required arguments: __user_id__ and label_id")
+
+        gmail_service = gmail.GmailService(user_id=user_id)
+        result = gmail_service.delete_label(label_id)
+        
+        return [TextContent(type="text", text=json.dumps(result, indent=2))]
+
 # Tool handlers registry - v1.0.1 tools + Step 2 additions
 TOOL_HANDLERS = {
     # Original v1.0.1 tools
@@ -1092,4 +1125,5 @@ TOOL_HANDLERS = {
     "batch_archive_emails": BatchArchiveEmailsToolHandler,
     "list_archived_emails": ListArchivedEmailsToolHandler,
     "restore_email_to_inbox": RestoreEmailToInboxToolHandler,
+    "delete_label": DeleteLabelToolHandler,
 }

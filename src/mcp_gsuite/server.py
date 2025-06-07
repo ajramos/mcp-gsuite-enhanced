@@ -635,6 +635,24 @@ async def main():
                      },
                      "required": ["__user_id__", "email_id"]
                  }
+             ),
+             types.Tool(
+                 name="delete_label",
+                 description="Delete a Gmail label",
+                 inputSchema={
+                     "type": "object",
+                     "properties": {
+                         "__user_id__": {
+                             "type": "string",
+                             "description": f"The EMAIL of the Google account. Available accounts: {', '.join([a.email for a in accounts])}"
+                         },
+                         "label_id": {
+                             "type": "string",
+                             "description": "The ID of the label to delete"
+                         }
+                     },
+                     "required": ["__user_id__", "label_id"]
+                 }
              )
          ]
         
@@ -690,7 +708,7 @@ async def main():
                 MarkEmailReadToolHandler, TrashEmailToolHandler, ListLabelsToolHandler,
                 CreateLabelToolHandler, ApplyLabelToolHandler, RemoveLabelToolHandler,
                 ArchiveEmailToolHandler, BatchArchiveEmailsToolHandler, 
-                ListArchivedEmailsToolHandler, RestoreEmailToInboxToolHandler
+                ListArchivedEmailsToolHandler, RestoreEmailToInboxToolHandler, DeleteLabelToolHandler
             )
             
             # Tool handler registry
@@ -723,6 +741,7 @@ async def main():
                 "batch_archive_emails": BatchArchiveEmailsToolHandler,
                 "list_archived_emails": ListArchivedEmailsToolHandler,
                 "restore_email_to_inbox": RestoreEmailToInboxToolHandler,
+                "delete_label": DeleteLabelToolHandler,
             }
             
             if name in tool_handlers:

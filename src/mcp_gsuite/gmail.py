@@ -659,3 +659,15 @@ class GmailService():
         except Exception as e:
             logging.error(f"Error restoring email {email_id} to inbox: {str(e)}")
             return False
+
+    def delete_label(self, label_id: str) -> dict:
+        """Delete a Gmail label"""
+        try:
+            self.service.users().labels().delete(
+                userId='me',
+                id=label_id
+            ).execute()
+            return {'status': 'success', 'label_id': label_id, 'action': 'deleted'}
+        except Exception as e:
+            logging.error(f"Error deleting label {label_id}: {str(e)}")
+            return {'status': 'error', 'error_message': str(e)}
