@@ -13,6 +13,7 @@ import mcp.server.stdio
 from . import gauth
 from . import tools_gmail
 from . import tools_calendar
+from . import __version__
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -765,7 +766,7 @@ async def main():
             write_stream,
             InitializationOptions(
                 server_name="mcp-gsuite",
-                server_version="0.4.1",
+                server_version=__version__,
                 capabilities=server.get_capabilities(
                     notification_options=NotificationOptions(),
                     experimental_capabilities={},
